@@ -1,0 +1,1675 @@
+-------------------------------------------- SCREEN 049
+( GRAPHICS PACK          < 3/14/84> 76) 
+HEX                                     
+: ?ZERO 4000 2000 DO I C@ 0= IF         
+     80 I C! THEN LOOP ;                
+DECIMAL                                 
+                                        
+: PACK   ?ZERO                          
+   PTABLE DUP 2000 0 FILL  TADR !       
+   0 YADDRESS @ C@                      
+   40 0 DO VPASS 2 +LOOP !BYTES         
+   DDROP 0 YADDRESS @ 1+ C@             
+   40 1 DO VPASS 2 +LOOP !BYTES         
+   DDROP ;                              
+                                        
+: DRAW-PIC ( BLK# -- )                  
+  HGR 0 SWAP DUP 8 + SWAP DO DUP 1024 * 
+   I BLOCK SWAP 8192 + 1024 CMOVE 1+    
+   LOOP ;                               
+                                        
+                                        
+                                        
+                                        
+                                        
+                                        
+-------------------------------------------- SCREEN 050
+( VARIABLES BUFFERS ETC  < 2/ 9/84>141) 
+CREATE PTABLE 2000 ALLOT                
+: CVARIABLE CREATE 1 ALLOT ;            
+CREATE COLBUF 160 ALLOT                 
+CREATE SDB 25 ALLOT                     
+CREATE AS-TABLE                         
+  2 C, 1 C, 2 C, 3 C, 3 C, 1 C, 1 C,    
+  4 C, 4 C, 2 C, 2 C, 2 C, 2 C, 2 C,    
+  1 C, 1 C, 1 C, 1 C, 2 C, 1 C, 1 C,    
+  2 C, 1 C,                             
+CREATE SF-TABLE                         
+  141 C, 1 C, 142 C, 1 C, 143 C, 1 C,   
+  147 C, 2 C, 149 C, 2 C,               
+CREATE ALPHBUF 101 ALLOT                
+CREATE SEC-INDEX 1200 ALLOT             
+  ( 4 BYTES FOR EACH COLLEGE )          
+CREATE PRIORITY 8 ALLOT                 
+HEX                                     
+CREATE BIT 01 C, 02 C, 04 C, 08 C,      
+   10 C, 20 C, 40 C, 80 C,              
+DECIMAL                                 
+VARIABLE VADR     VARIABLE VCNT         
+VARIABLE ASIZE    VARIABLE COL#         
+                                        
+-------------------------------------------- SCREEN 051
+( VIRTUAL DATA BASE      < 2/ 9/84>142) 
+: -ROT ROT ROT ;                        
+                                        
+: C+! DUP C@ ROT + SWAP C! ;            
+                                        
+: D/MOD ( 32N,16N -- 16N,16N )          
+   >R DDUP 1 I M*/  DDUP R> 1 M*/       
+   DSWAP >R >R D-  R> R> ;              
+                                        
+: @ADR ( OFFSET 32N -- #BYTES TO END OF 
+   BLOCK 16N,ADDR 16N,BLOCK# 16N )      
+   1024 D/MOD DROP SWAP DROP 1024       
+   3 PICK - >R DUP BLOCK ROT + R> ;     
+                                        
+                                        
+                                        
+                                        
+                                        
+                                        
+                                        
+                                        
+                                        
+                                        
+                                        
+-------------------------------------------- SCREEN 052
+( VIRTUAL DATA BASE      < 2/ 9/84>143) 
+: @VIR1 ( OFFSET 32N -- )               
+   VADR @ >R  VCNT @ >R  @ADR           
+   I OVER > IF                          
+    DDUP I' SWAP CMOVE  R> OVER -       
+    R> SWAP >R + >R DROP 1+ BLOCK       
+    R> R> CMOVE                         
+   ELSE                                 
+    DROP R> R> SWAP CMOVE DROP THEN ;   
+                                        
+: @VIR ( OFFSET 32N --  )               
+   BEGIN VCNT @ 2048 > WHILE  DDUP      
+    VCNT @ >R 2048 VCNT ! @VIR1 2048.   
+    D+ R> 2048 - VCNT ! 2048 VADR +!    
+    REPEAT  VCNT @ IF @VIR1  ELSE       
+    DDROP  THEN ;                       
+                                        
+: !DADRS COLBUF VADR ! 160 VCNT ! ;     
+                                        
+: @DATA ( COL# -- )                     
+   DUP COL# !                           
+   0 160 1 M*/ !DADRS  @VIR ;           
+                                        
+                                        
+-------------------------------------------- SCREEN 053
+( VIRTUAL DATA BASE      < 2/ 9/84>144) 
+                                        
+: !AADR    COLBUF @ 0 107520. D+        
+   ALPHBUF VADR ! 101 VCNT ! ;          
+                                        
+: @ALPH  ( -- ASSUMES COLBUF LOADED )   
+   !AADR @VIR ;                         
+                                        
+: @BIT ( BIT# -- MASK )                 
+   BIT + C@ ;                           
+                                        
+                                        
+                                        
+                                        
+                                        
+                                        
+                                        
+                                        
+                                        
+                                        
+                                        
+                                        
+                                        
+                                        
+-------------------------------------------- SCREEN 054
+( GET ALPHA              < 2/10/84>  5) 
+: @COL ( COL# -- )                      
+   @DATA @ALPH ;                        
+                                        
+: WITHIN ( #,MIN,MAX -- F )             
+   1+ 3 PICK > -ROT 1- > AND ;          
+                                        
+: GET-ALPHA ( FIELD # -- COUNT,ADDR )   
+   DUP 0 5 WITHIN IF  ALPHBUF SWAP      
+    DUP 0= IF DROP ELSE                 
+    0 DO DUP C@ + LOOP THEN DUP C@      
+    ELSE ." OUT OF RANGE" CR            
+   DROP THEN ;                          
+                                        
+                                        
+                                        
+                                        
+                                        
+                                        
+                                        
+                                        
+                                        
+                                        
+                                        
+-------------------------------------------- SCREEN 055
+( DATA CONVERSION        < 1/31/84>109) 
+                                        
+VARIABLE ALPHA-BASE  0 ALPHA-BASE !     
+                                        
+CREATE A-OFFSET 0 C, 39 C, 39 C, 3 C,   
+   6 C, 9 C, 5 C,                       
+                                        
+CREATE DTMOD                            
+   1 , -1 , 0 , 1 , 1 , 2 , 3 , 3 ,     
+   4 ,  4 ,                             
+                                        
+: >JUL ( DD,MM -- JUL )                 
+   1- DUP 30 * SWAP 1- 2* DTMOD +       
+   @ + + ;                              
+                                        
+: @OLD  ( COL# -- ADDR )                
+   2 /MOD BLOCK SWAP 512 * + ;          
+                                        
+                                        
+                                        
+                                        
+                                        
+                                        
+                                        
+-------------------------------------------- SCREEN 056
+( START OF EDITOR DEFINITIONS )         
+HEX                                     
+: VHTAB 27 MIN 0 MAX 24 C!              
+        17 MIN 0 MAX 25 C!              
+        -3DE CALL ;                     
+DECIMAL                                 
+                                        
+                                        
+                                        
+                                        
+                                        
+                                        
+                                        
+                                        
+                                        
+                                        
+                                        
+                                        
+                                        
+                                        
+                                        
+                                        
+                                        
+                                        
+-------------------------------------------- SCREEN 057
+( EDITOR CONT            < 0/ 0/ 0> 57) 
+                                        
+VARIABLE X-AT   0 X-AT !                
+VARIABLE Y-AT   0 Y-AT !                
+VARIABLE CURSOR 0 CURSOR !              
+                                        
+( STORE SCREEN COORDINATES )            
+: !YX    ( Y X -- )                     
+    X-AT !  Y-AT ! ;                    
+                                        
+: @YX    ( Y X -- )                     
+    Y-AT @ X-AT @ ;                     
+                                        
+: CNT   ( -- N )                        
+    PAD C@ ;                            
+                                        
+( Y , X ---> * )   ( SET CURSOR POS. )  
+: AT   VHTAB ;                          
+: PUT-CUR   ( -- )                      
+    @YX CURSOR @ + AT ;                 
+                                        
+                                        
+                                        
+                               (  0:00) 
+-------------------------------------------- SCREEN 058
+( SCREEN 58  CRT CONTROL )              
+HEX   : C@-DROP C@ DROP ;               
+VARIABLE  CURRENT-PAGE                  
+: TEXT  C051 C@-DROP ;                  
+: 1PAGE C054 C@-DROP 0 CURRENT-PAGE ! ; 
+: 2PAGE C055 C@-DROP 1 CURRENT-PAGE ! ; 
+: LO-RES C056 C@-DROP ;                 
+: HI-RES C057 C@-DROP ;                 
+: GRAPHICS  C053 C@-DROP C050 C@-DROP ; 
+: LO-PAGE  2000 ;                       
+: HI-PAGE  4000 ;                       
+: ALL-GRAPHICS                          
+   C052 C@-DROP C050 C@-DROP ;          
+                                        
+: SCR-TEST GRAPHICS HI-RES              
+     2700 0 DO  1PAGE 2PAGE  LOOP       
+     1PAGE TEXT ; DECIMAL               
+: HG 1PAGE HI-RES ALL-GRAPHICS ;        
+: 1HG 1PAGE HI-RES GRAPHICS ;           
+                                        
+: HGR  1PAGE   HI-RES ALL-GRAPHICS      
+         LO-PAGE 8192 0 FILL ;          
+                                        
+                                        
+-------------------------------------------- SCREEN 059
+( XOFFST TABLE FOR HI-RES CHR SET )     
+                                        
+CREATE XOFFST  20 ALLOT                 
+XOFFST 2  + CONSTANT   STRT-BIT         
+XOFFST 4  + CONSTANT   YP               
+XOFFST 6  + CONSTANT   XP               
+XOFFST 8  + CONSTANT   LO-OLD-MSK       
+XOFFST 10 + CONSTANT   LO-NEW-MSK       
+XOFFST 12 + CONSTANT   HI-OLD-MSK       
+XOFFST 14 + CONSTANT   HI-NEW-MSK       
+XOFFST 16 + CONSTANT   CHAR-POINT       
+XOFFST 18 + CONSTANT   RS-CNT           
+                                        
+                                        
+                                        
+                                        
+                                        
+                                        
+                                        
+                                        
+                                        
+                                        
+                                        
+                                        
+-------------------------------------------- SCREEN 060
+( YADDRESS TABLE )                      
+CREATE  YADDRESS                        
+                                        
+ 8192 ,  9216 , 10240 , 11264 , 12288 , 
+13312 , 14336 , 15360 ,  8320 ,  9344 , 
+10368 , 11392 , 12416 , 13440 , 14464 , 
+15488 ,  8448 ,  9472 , 10496 , 11520 , 
+12544 , 13568 , 14592 , 15616 ,  8576 , 
+9600  , 10624 , 11648 , 12672 , 13696 , 
+14720 , 15744 ,  8704 ,  9728 , 10752 , 
+11776 , 12800 , 13824 , 14848 , 15872 , 
+ 8832 ,  9856 , 10880 , 11904 , 12928 , 
+13952 , 14976 , 16000 ,  8960 ,  9984 , 
+11008 , 12032 , 13056 , 14080 , 15104 , 
+16128 ,  9088 , 10112 , 11136 , 12160 , 
+13184 , 14208 , 15232 , 16256 ,  8232 , 
+ 9256 , 10280 , 11304 , 12328 , 13352 , 
+14376 , 15400 ,  8360 ,  9384 , 10408 , 
+11432 , 12456 , 13480 , 14504 , 15528 , 
+ 8488 ,  9512 , 10536 , 11560 , 12584 , 
+13608 , 14632 , 15656 ,  8616 ,  9640 , 
+10664 , 11688 , 12712 , 13736 , 14760 , 
+15784 ,  8744 ,  9768 , 10792 , 11816 , 
+12840 , 13864 , 14888 , 15912 ,         
+-------------------------------------------- SCREEN 061
+( YADDRESS TABLE )                      
+ 8872 ,  9896 , 10920 , 11944 , 12968 , 
+13992 , 15016 , 16040 ,  9000 , 10024 , 
+11048 , 12072 , 13096 , 14120 , 15144 , 
+16168 ,  9128 , 10152 , 11176 , 12200 , 
+13224 , 14248 , 15272 , 16296 ,  8272 , 
+ 9296 , 10320 , 11344 , 12368 , 13392 , 
+14416 , 15440 ,  8400 ,  9424 , 10448 , 
+11472 , 12496 , 13520 , 14544 , 15568 , 
+ 8528 ,  9552 , 10576 , 11600 , 12624 , 
+13648 , 14672 , 15696 ,  8656 ,  9680 , 
+10704 , 11728 , 12752 , 13776 , 14800 , 
+15824 ,  8784 ,  9808 , 10832 , 11856 , 
+12880 , 13904 , 14928 , 15952 ,  8912 , 
+ 9936 , 10960 , 11984 , 13008 , 14032 , 
+15056 , 16080 ,  9040 , 10064 , 11088 , 
+12112 , 13136 , 14160 , 15184 , 16208 , 
+ 9168 , 10192 , 11216 , 12240 , 13264 , 
+14288 , 15312 , 16336 ,                 
+                                        
+                                        
+                                        
+                                        
+                                        
+-------------------------------------------- SCREEN 062
+( 7/MOD-ALL   )                         
+: 7/  280 0 DO I 7 /MOD C, C, LOOP ;    
+CREATE (7/MOD)   7/                     
+VARIABLE '7/M'    (7/MOD) '7/M'   !     
+                                        
+CODE  7/MOD-ALL                         
+            CLC,          XP LDA,       
+      '7/M' ADC,                        
+      XP 1+ LDA,    '7/M' 1+ ADC,       
+       N 1+ STA,             CLC,       
+         XP LDA,           N ADC,       
+          N STA,       XP 1+ LDA,       
+       N 1+ ADC,                        
+       N 1+ STA,         0 # LDA,       
+            TAY,        N )Y LDA,       
+     XOFFST STA,         0 # LDA,       
+  XOFFST 1+ STA,             INY,       
+       N )Y LDA,    STRT-BIT STA,       
+        0 # LDA, STRT-BIT 1+ STA,       
+            RTS,             C;         
+                                        
+CODE C7/-ALL                            
+' 7/MOD-ALL JSR,        NEXT JMP, C;    
+                                        
+-------------------------------------------- SCREEN 063
+(  @BIT  ?BIT  )                        
+                                        
+VARIABLE YPOS 2 ALLOT  VARIABLE XPOS    
+VARIABLE COLOR                          
+                                        
+( CYCLE CONTROL )                       
+CREATE CYCLE-MAP                        
+   0 C,  2 C,  4 C,                     
+   6 C,  1 C,  3 C,                     
+   5 C,                                 
+                                        
+HEX                                     
+( NEW/OLD MASKS )                       
+CREATE HI-OLD                           
+ FF C, FE C, FC C, F8 C, F0 C, E0 C,    
+ C0 C,  ( HI-OLD )                      
+                                        
+CREATE GLO-OLD                          
+ 80 C, 81 C, 83 C, 87 C, 8F C, 9F C,    
+ BF C,  ( GLO-OLD )                     
+                                        
+DECIMAL                                 
+                                        
+                                        
+-------------------------------------------- SCREEN 064
+VARIABLE YLEN  VARIABLE XLEN            
+VARIABLE RAM-CHAR  VARIABLE SF-CHAR     
+VARIABLE VID-ADDR VARIABLE (V!)         
+(  : @VID-ADDR VID-ADDR @ ; )           
+VARIABLE (VID)   VARIABLE (YAD)         
+YADDRESS (YAD) !                        
+CODE IYP                                
+    (YAD) LDA,          N 6 + STA,      
+ (YAD) 1+ LDA,          N 7 + STA,      
+       YP LDA,                          
+          CLC,          N 6 + ADC,      
+    N 6 + STA,          YP 1+ LDA,      
+    N 7 + ADC,          N 7 + STA,      
+       YP LDA,                CLC,      
+    N 6 + ADC,          N 6 + STA,      
+   YP 1+  LDA,          N 7 + ADC,      
+    N 7 + STA,       RAM-CHAR LDA,      
+    N 4 + STA,    RAM-CHAR 1+ LDA,      
+    N 5 + STA,    CHAR-POINT  LDA,      
+    N 2 + STA, CHAR-POINT  1+ LDA,      
+    N 3 + STA,                RTS, C;   
+                                        
+                                        
+                                        
+-------------------------------------------- SCREEN 065
+( 7/MOD )                               
+( SETS XOFFST , EXPECTS XP TO BE SET    
+   ON ENTRY )                           
+CODE G7/                                
+              CLC,         XP ROL,      
+        XP 1+ ROL, ( XP 2* )            
+ ' 7/MOD-ALL  JSR,            CLC,      
+        XP 1+ ROR,         XP ROR,      
+              RTS,            C;        
+                                        
+CODE C7/                                
+        ' G7/ JSR,       NEXT JMP, C;   
+                                        
+                                        
+                                        
+                                        
+                                        
+                                        
+                                        
+                                        
+                                        
+                                        
+                                        
+                                        
+-------------------------------------------- SCREEN 066
+VARIABLE HCNT                           
+CODE SVA                                
+      0 # LDA,           TAY,           
+ N 6 + )Y LDA,         N STA,           
+          INY,  N 6 + )Y LDA,           
+     N 1+ STA,           CLC,           
+   XOFFST LDA,         N ADC,           
+        N STA,           CLC,           
+      2 # LDA,     N 6 + ADC,           
+    N 6 + STA,       0 # LDA,           
+          TAY,     N 7 + ADC,           
+    N 7 + STA,           RTS,  C;       
+CODE M1R                                
+     XLEN LDA,      HCNT STA,           
+      0 # LDA,           TAY,           
+BEGIN,                                  
+     N )Y LDA,  N 4 + )Y STA,           
+          INY,      HCNT DEC,           
+0= UNTIL,                               
+    ' SVA JSR,      XLEN LDA,           
+          CLC,                          
+    N 4 + ADC,     N 4 + STA,           
+      0 # LDA,     N 5 + ADC,           
+    N 5 + STA,           RTS, C;        
+-------------------------------------------- SCREEN 067
+( M2R --CODE--           < 1/24/84>158) 
+                                        
+CODE M2R                                
+       XLEN LDA,      HCNT STA,         
+        0 # LDA,           TAY,         
+BEGIN,                                  
+   N 4 + )Y LDA,      N )Y STA,         
+            INY,      HCNT DEC,         
+0= UNTIL,                               
+      ' SVA JSR,      XLEN LDA,         
+            CLC,     N 4 + ADC,         
+      N 4 + STA,       0 # LDA,         
+      N 5 + ADC,     N 5 + STA,         
+            RTS,           C;           
+                                        
+                                        
+                                        
+                                        
+                                        
+                                        
+                                        
+                                        
+                                        
+                                        
+-------------------------------------------- SCREEN 068
+( BLOCK DRAW   INITIALIZATION )         
+( CHAR-ADDR, XOFFSET , Y ---> * )       
+ASSEMBLER                               
+CODE BD-INIT                            
+        3 # LDA,         SETUP JSR,     
+          N LDA,            YP STA,     
+       N 1+ LDA,         YP 1+ STA,     
+       N 2+ LDA,        XOFFST STA,     
+      N 3 + LDA,     XOFFST 1+ STA,     
+        0 # LDA,               TAY,     
+   N 4 + )Y LDA,          XLEN STA,     
+        0 # LDA,       XLEN 1+ STA,     
+            INY,      N 4 + )Y LDA,     
+       YLEN STA,           0 # LDA,     
+    YLEN 1+ STA,               CLC,     
+        2 # LDA,         N 4 + ADC,     
+ CHAR-POINT STA,           0 # LDA,     
+      N 5 + ADC, CHAR-POINT 1+ STA,     
+       NEXT JMP,               C;       
+                                        
+                                        
+                                        
+                                        
+                                        
+-------------------------------------------- SCREEN 069
+( BLOCK DRAW   INITIALIZATION )         
+( CHAR-ADDR, XOFFSET , Y ---> * )       
+EXIT                                    
+: BD-INIT                               
+      YP !  XOFFST !                    
+      DUP C@ XLEN !                     
+   1+ DUP C@ YLEN !                     
+   1+ CHAR-POINT  ! ;                   
+                                        
+                                        
+                                        
+                                        
+                                        
+                                        
+                                        
+                                        
+                                        
+                                        
+                                        
+                                        
+                                        
+                                        
+                                        
+                                        
+-------------------------------------------- SCREEN 070
+( SAVE-VID               < 1/24/84>161) 
+                                        
+CODE  SAVE-VID                          
+     XLEN INC,      ' IYP JSR,          
+     ( SET UP SCRATCH AREA)             
+    ' SVA JSR,       YLEN LDA,          
+          PHA, ( N = VID ADDR N + 2     
+    = CHARACTER ADDR )                  
+BEGIN,                                  
+    ' M1R JSR,       YLEN DEC,          
+    ( N + 4 = RAM ADDR N + 6 = YADDR)   
+0= UNTIL,                               
+     XLEN DEC,            PLA,          
+     YLEN STA,       NEXT JMP, C;       
+                                        
+                                        
+                                        
+                                        
+                                        
+                                        
+                                        
+                                        
+                                        
+                                        
+-------------------------------------------- SCREEN 071
+( RESTORE-VID            < 1/24/84>162) 
+                                        
+CODE RESTORE-VID                        
+     XLEN INC,      ' IYP JSR,          
+      ( SET UP SCRATCH AREA )           
+    ' SVA JSR,       YLEN LDA,          
+          PHA,                          
+   ( N= VID ADDR N + 2 = CHAR ADDR )    
+BEGIN,                                  
+    ' M2R JSR,       YLEN DEC,          
+  ( N + 4 = RAM ADDR N + 6 = YADDR )    
+0= UNTIL, ( POINTER )                   
+     XLEN DEC,            PLA,          
+     YLEN STA,       NEXT JMP, C;       
+                                        
+                                        
+                                        
+                                        
+                                        
+                                        
+                                        
+                                        
+                                        
+                                        
+-------------------------------------------- SCREEN 072
+( SFILL                  < 1/25/84>163) 
+( SF-CHAR = FILL CHAR )                 
+( N 4 + =RAM ADDR N 6 + = YADDR )       
+CODE  (SFILL)            ( SET UP )     
+          ' IYP JSR,  ( SCRATCH AREA )  
+          ' SVA JSR,       YLEN LDA,    
+                PHA,                    
+ ( N = VID ADR N + 2 = CHAR ADDR )      
+0= NOT IF, BEGIN,                       
+           XLEN LDA,                    
+0= NOT IF,                              
+           HCNT STA,        0 # LDA,    
+                TAY, ( LOOP COUNTER )   
+         XOFFST LDA,        1 # AND,    
+0= IF,  BEGIN,                          
+        SF-CHAR LDA,       N )Y STA,    
+                INY,                    
+           HCNT DEC,                    
+0= NOT IF,                              
+     SF-CHAR 1+ LDA,       N )Y STA,    
+                INY,       HCNT DEC,    
+THEN,  0= UNTIL,  THEN,                 
+                                        
+                                        
+-------------------------------------------- SCREEN 073
+( SFILL )                               
+ASSEMBLER                               
+       ' SVA JSR,          XLEN LDA,    
+             CLC,          N 2+ ADC,    
+        N 2+ STA,           0 # LDA,    
+       N 3 + ADC,         N 3 + STA,    
+        YLEN DEC,                       
+THEN,  0= UNTIL,   THEN,                
+             PLA,          YLEN STA,    
+        NEXT JMP,               C;      
+                                        
+: SFILL BD-INIT (SFILL) ;               
+                                        
+                                        
+                                        
+                                        
+                                        
+                                        
+                                        
+                                        
+                                        
+                                        
+                                        
+                                        
+-------------------------------------------- SCREEN 074
+( BDRAW                  < 1/26/84> 25) 
+                                        
+CODE MDR                                
+         XLEN LDA,      HCNT STA,       
+          0 # LDA,                      
+              TAY, ( LOOP COUNTER )     
+BEGIN,                                  
+      N 2+ )Y LDA,      N )Y STA,       
+              INY,      HCNT DEC,       
+0= UNTIL,                               
+              RTS,           C;         
+                                        
+                                        
+                                        
+                                        
+                                        
+                                        
+                                        
+                                        
+                                        
+                                        
+                                        
+                                        
+                                        
+-------------------------------------------- SCREEN 075
+( BDRAW )                               
+CODE   (BDDRAW)                         
+   ' IYP JSR, ( SET UP SCRATCH AREA)    
+   ' SVA JSR,      YLEN LDA,            
+         PHA,                           
+  ( N = VID ADR N + 2 = CHAR ADDR )     
+                                        
+BEGIN,                                  
+   ' MDR JSR, ( N + 4 = RAM ADDR        
+                N + 6 = YADDR )         
+   ' SVA JSR,      XLEN LDA,            
+         CLC,     N 2+  ADC,            
+    N 2+ STA,       0 # LDA,            
+   N 3 + ADC,     N 3 + STA,            
+    YLEN DEC,                           
+0= UNTIL,                               
+                                        
+         PLA,      YLEN STA,            
+    NEXT JMP,           C;              
+                                        
+( CHAR ADDR, X OFFSET, Y LINE # --> * ) 
+: BD-DRAW                               
+      BD-INIT  (BDDRAW) ;               
+                                        
+-------------------------------------------- SCREEN 076
+( HIGH RES CHAR SET     < 1/26/84> 27)  
+VARIABLE YSAVE   VARIABLE LTEMP         
+CODE (HGEMIT)                           
+  CHAR-POINT LDA,         N 2+ STA,     
+  CHAR-POINT 1+ LDA,     N 3 + STA,     
+           YLEN LDA,   HCNT 1+ STA,     
+          (YAD) LDA,     N 6 + STA,     
+       (YAD) 1+ LDA,     N 7 + STA,     
+             YP LDA,           CLC,     
+         N 6  + ADC,     N 6 + STA,     
+            0 # LDA,     N 7 + ADC,     
+          N 7 + STA,        YP LDA,     
+                CLC,     N 6 + ADC,     
+          N 6 + STA,       0 # LDA,     
+          N 7 + ADC,     N 7 + STA,     
+BEGIN, DROP                             
+           XLEN LDA,      HCNT STA,     
+            0 # LDA,           TAY,     
+         XOFFST LDA,           CLC,     
+       N 6 + )Y ADC,         N STA,     
+                INY,       0 # LDA,     
+       N 6 + )Y ADC,      N 1+ STA,     
+                DEY,           CLC,     
+            2 # LDA,     N 6 + ADC,     
+-------------------------------------------- SCREEN 077
+( HIGH RES CHAR SET      < 1/26/84>168) 
+ASSEMBLER                               
+       N 6 + STA,          0 # LDA,     
+       N 7 + ADC,        N 7 + STA,     
+         0 # LDA,     LTEMP 1+ STA,     
+HEX                                     
+( SHIFT THE VID CHAR LEFT BY THE        
+      COUNT IN STRT-BIT )               
+( LEAVE THE RESULT IN LTEMP )           
+        ( LO-BYTE ) HI-NEW-MSK LDA,     
+             PHA,   LO-NEW-MSK LDA,     
+             PHA,                       
+BEGIN,                                  
+     N 2+ )Y LDA,        LTEMP STA,     
+ ( LTEMP = LO BYTE )                    
+        80 # LDA,        LTEMP AND,     
+             PHA,        YSAVE STY,     
+    STRT-BIT LDA,                       
+0= NOT IF,                              
+             TAY, ( YREG = STRT BIT)    
+         0 # LDA, ( CLEAR LTEMP 1+ )    
+DECIMAL                                 
+                                        
+                                        
+-------------------------------------------- SCREEN 078
+( HIGH RES CHARACTER SET < 1/26/84>169) 
+ASSEMBLER   HEX                         
+BEGIN,                                  
+         LTEMP ASL,          .A ROL,    
+               DEY,                     
+0= UNTIL,                               
+         LTEMP ASL,          .A ROL,    
+         LTEMP LSR, ( GET THE LAST BIT) 
+THEN,                                   
+      LTEMP 1+ STA,       YSAVE LDY,    
+DECIMAL             ( RESTORE Y)        
+( N     = VID ADDRESS )                 
+( N + 2 = CHAR. POINTER )               
+( N + 6 = POINTER TO VID ADDR TABLE )   
+               PLA,             PHA,    
+    ( SAVE COLOR BT FOR HI BYTE )       
+         LTEMP ORA,  ( ACC = LO BYTE )  
+    LO-NEW-MSK AND,       LTEMP STA,    
+         255 # LDA,  LO-NEW-MSK EOR,    
+           ( VID ADDR )    N )Y AND,    
+         LTEMP ORA, ( FINAL OLD BYTE )  
+           ( VID ADDR )    N )Y STA,    
+         127 # LDA,    LTEMP 1+ AND,    
+      LTEMP 1+ STA,             PLA,    
+-------------------------------------------- SCREEN 079
+(  LO-BYTE CODE VER.    < 1/26/84>170)  
+ ASSEMBLER                              
+    LTEMP 1+ ORA,       LTEMP 1+ STA,   
+             INY,     HI-NEW-MSK LDA,   
+    LTEMP 1+ AND,       LTEMP 1+ STA,   
+       255 # LDA,     HI-NEW-MSK EOR,   
+        N )Y AND,       LTEMP 1+ ORA,   
+     ( VID ADDR )           N )Y STA,   
+  LO-OLD-MSK LDA,     HI-NEW-MSK STA,   
+  HI-OLD-MSK LDA,     LO-NEW-MSK STA,   
+        HCNT DEC,                       
+0= UNTIL,                               
+                        ( NEXT BYTE )   
+             PLA,     LO-NEW-MSK STA,   
+             PLA,     HI-NEW-MSK STA,   
+             CLC,           XLEN LDA,   
+        N 2+ ADC,           N 2+ STA,   
+         0 # LDA,          N 3 + ADC,   
+       N 3 + STA,        HCNT 1+ DEC,   
+0= NOT IF, ROT JMP, THEN,               
+  ( JUMP TO ADDR ON STACK FROM BLK 27)  
+    ( NEXT LINE )                       
+        NEXT JMP,                C;     
+                                        
+-------------------------------------------- SCREEN 080
+( CODE FOR GINIT         < 1/26/84>171) 
+(    RAM  CHAR ADDRESS ---> * )         
+( N = RAM CHAR ADDRESS , N + 2 =        
+ CONTENTS OF RAM CHAR ADDR )            
+CODE (GINIT)                            
+        1 # LDA,         SETUP JSR,     
+        0 # LDA,               TAY,     
+       N )Y LDA,          N 2+ STA,     
+            INY,          N )Y LDA,     
+      N 3 + STA,               DEY,     
+            CLC,           6 # LDA,     
+          N ADC,      RAM-CHAR STA,     
+        0 # LDA,         N 1+  ADC,     
+RAM-CHAR 1+ STA,               CLC,     
+        2 # LDA,          N 2+ ADC,     
+ CHAR-POINT STA,           0 # LDA,     
+      N 3 + ADC, CHAR-POINT 1+ STA,     
+    N 2+ )Y LDA,                        
+       XLEN STA,               INY,     
+   N 2 + )Y LDA,          YLEN STA,     
+            INY,          N )Y LDA,     
+         XP STA,               INY,     
+                                        
+                                        
+-------------------------------------------- SCREEN 081
+( CODE FOR GINIT         < 1/26/84>172) 
+ASSEMBLER                               
+                                        
+         N )Y LDA,        XP 1+  STA,   
+              INY,          N )Y LDA,   
+           YP STA,               INY,   
+         N )Y LDA,        YP 1+  STA,   
+          0 # LDA,               TAY,   
+              RTS,               C;     
+                                        
+                                        
+                                        
+                                        
+                                        
+                                        
+                                        
+                                        
+                                        
+                                        
+                                        
+                                        
+                                        
+                                        
+                                        
+-------------------------------------------- SCREEN 082
+( HIGH RES GRAPHICS INIT )              
+CODE (GINIT                             
+   ' (GINIT) JSR,        ' G7/ JSR,     
+    0 # LDA, TAY,         NEXT JMP, C;  
+                                        
+    ( RAM  CHAR ADDRESS ----> * )       
+: GINIT (  DUP 6 +  RAM-CHAR !  DUP @   
+      DUP  )  (GINIT                    
+( 2 +  CHAR-POINT !                     
+  DUP C@ XLEN !  1+ C@ YLEN !           
+  DUP 4 + @  YP !                       
+  2 + @ XP !  G7/ )  STRT-BIT @         
+  DUP  HI-OLD + C@   HI-OLD-MSK !       
+  DUP  HI-OLD + C@   LO-NEW-MSK !       
+  DUP GLO-OLD + C@   LO-OLD-MSK !       
+      GLO-OLD + C@   HI-NEW-MSK ! ;     
+                                        
+           ( * ---> * )                 
+: CDRAW   DROP    ( GINIT )             
+         YP @  (HGEMIT) YP ! ;          
+                                        
+                                        
+                                        
+                                        
+-------------------------------------------- SCREEN 083
+( MASK FOR VAR. CHAR SET )  HEX         
+CREATE V-MASK                           
+( 2 )   83 C,  80 C, 80 C, 80 C,        
+        86 C,  80 C, 80 C, 80 C,        
+        8C C,  80 C, 80 C, 80 C,        
+        98 C,  80 C, 80 C, 80 C,        
+        B0 C,  80 C, 80 C, 80 C,        
+        E0 C,  81 C, 80 C, 80 C,        
+        C0 C,  83 C, 80 C, 80 C,        
+                                        
+( 3 )   87 C,  80 C, 80 C, 80 C,        
+        8E C,  80 C, 80 C, 80 C,        
+        9C C,  80 C, 80 C, 80 C,        
+        B8 C,  80 C, 80 C, 80 C,        
+        F0 C,  80 C, 80 C, 80 C,        
+        E0 C,  81 C, 80 C, 80 C,        
+        C0 C,  83 C, 80 C, 80 C,        
+DECIMAL                                 
+                                        
+                                        
+                                        
+                                        
+                                        
+                                        
+-------------------------------------------- SCREEN 084
+( MASK FOR VAR. CHAR SET )  HEX         
+( 4 )   8F C,  80 C, 80 C, 80 C,        
+        9E C,  80 C, 80 C, 80 C,        
+        BC C,  80 C, 80 C, 80 C,        
+        F8 C,  80 C, 80 C, 80 C,        
+        F0 C,  81 C, 80 C, 80 C,        
+        E0 C,  83 C, 80 C, 80 C,        
+        C0 C,  87 C, 80 C, 80 C,        
+                                        
+( 5 )   9F C,  80 C, 80 C, 80 C,        
+        BE C,  80 C, 80 C, 80 C,        
+        FC C,  80 C, 80 C, 80 C,        
+        F8 C,  81 C, 80 C, 80 C,        
+        F0 C,  83 C, 80 C, 80 C,        
+        E0 C,  87 C, 80 C, 80 C,        
+        C0 C,  8F C, 80 C, 80 C,        
+DECIMAL                                 
+                                        
+                                        
+                                        
+                                        
+                                        
+                                        
+                                        
+-------------------------------------------- SCREEN 085
+( MASK FOR VAR. CHAR SET )  HEX         
+( 6 )   BF C,  80 C, 80 C, 80 C,        
+        FE C,  80 C, 80 C, 80 C,        
+        FC C,  81 C, 80 C, 80 C,        
+        F8 C,  83 C, 80 C, 80 C,        
+        F0 C,  87 C, 80 C, 80 C,        
+        E0 C,  8F C, 80 C, 80 C,        
+        C0 C,  9F C, 80 C, 80 C,        
+DECIMAL                                 
+                                        
+                                        
+                                        
+                                        
+                                        
+                                        
+                                        
+                                        
+                                        
+                                        
+                                        
+                                        
+                                        
+                                        
+                                        
+-------------------------------------------- SCREEN 086
+( MASK FOR VAR. CHAR SET )  HEX         
+( 7 )   FF C,  80 C, 80 C, 80 C,        
+        FE C,  81 C, 80 C, 80 C,        
+        FC C,  83 C, 80 C, 80 C,        
+        F8 C,  87 C, 80 C, 80 C,        
+        F0 C,  8F C, 80 C, 80 C,        
+        E0 C,  9F C, 80 C, 80 C,        
+        C0 C,  BF C, 80 C, 80 C,        
+DECIMAL                                 
+                                        
+                                        
+                                        
+                                        
+                                        
+                                        
+                                        
+                                        
+                                        
+                                        
+                                        
+                                        
+                                        
+                                        
+                                        
+-------------------------------------------- SCREEN 087
+( MASK FOR VAR. CHAR SET )  HEX         
+( 8  )  FF C,  80 C, 81 C, 80 C,        
+        FE C,  81 C, 82 C, 80 C,        
+        FC C,  83 C, 84 C, 80 C,        
+        F8 C,  87 C, 88 C, 80 C,        
+        F0 C,  8F C, 90 C, 80 C,        
+        E0 C,  9F C, A0 C, 80 C,        
+        C0 C,  BF C, C0 C, 80 C,        
+                                        
+( 9  )  FF C,  80 C, 83 C, 80 C,        
+        FE C,  81 C, 86 C, 80 C,        
+        FC C,  83 C, 8C C, 80 C,        
+        F8 C,  87 C, 98 C, 80 C,        
+        F0 C,  8F C, B0 C, 80 C,        
+        E0 C,  9F C, E0 C, 80 C,        
+        C0 C,  BF C, C0 C, 81 C,        
+DECIMAL                                 
+                                        
+                                        
+                                        
+                                        
+                                        
+                                        
+                                        
+-------------------------------------------- SCREEN 088
+( MASK FOR VAR. CHAR SET )  HEX         
+( 10 )  FF C,  00 C, 87 C, 80 C,        
+        FE C,  01 C, 8E C, 80 C,        
+        FC C,  03 C, 9C C, 80 C,        
+        F8 C,  07 C, B8 C, 80 C,        
+        F0 C,  0F C, F0 C, 80 C,        
+        E0 C,  1F C, E0 C, 81 C,        
+        C0 C,  3F C, C0 C, 83 C,        
+                                        
+( 11 )  FF C,  00 C, 8F C, 80 C,        
+        FE C,  01 C, 9E C, 80 C,        
+        FC C,  03 C, BC C, 80 C,        
+        F8 C,  07 C, F8 C, 80 C,        
+        F0 C,  0F C, F0 C, 81 C,        
+        E0 C,  1F C, E0 C, 83 C,        
+        C0 C,  3F C, C0 C, 87 C,        
+DECIMAL                                 
+                                        
+                                        
+                                        
+                                        
+                                        
+                                        
+                                        
+-------------------------------------------- SCREEN 089
+( MASK FOR VAR. CHAR SET )  HEX         
+( 12 )  FF C,  80 C, 9F C, 80 C,        
+        FE C,  81 C, BE C, 80 C,        
+        FC C,  83 C, FC C, 80 C,        
+        F8 C,  87 C, F8 C, 81 C,        
+        F0 C,  8F C, F0 C, 83 C,        
+        E0 C,  9F C, E0 C, 87 C,        
+        C0 C,  BF C, C0 C, 8F C,        
+                                        
+( 13 )  FF C,  80 C, BF C, 80 C,        
+        FE C,  81 C, FE C, 80 C,        
+        FC C,  83 C, FC C, 81 C,        
+        F8 C,  87 C, F8 C, 83 C,        
+        F0 C,  8F C, F0 C, 87 C,        
+        E0 C,  9F C, E0 C, 8F C,        
+        C0 C,  BF C, C0 C, 9F C,        
+DECIMAL                                 
+                                        
+                                        
+                                        
+                                        
+                                        
+                                        
+                                        
+-------------------------------------------- SCREEN 090
+( MASK FOR VAR. CHAR SET )  HEX         
+( 15 )  FF C,  80 C, FF C, 80 C,        
+        FE C,  81 C, FE C, 81 C,        
+        FC C,  83 C, FC C, 83 C,        
+        F8 C,  87 C, F8 C, 87 C,        
+        F0 C,  8F C, F0 C, 8F C,        
+        E0 C,  9F C, E0 C, 9F C,        
+        C0 C,  BF C, C0 C, BF C,        
+DECIMAL                                 
+                                        
+                                        
+                                        
+                                        
+                                        
+                                        
+                                        
+                                        
+                                        
+                                        
+                                        
+                                        
+                                        
+                                        
+                                        
+-------------------------------------------- SCREEN 091
+( VAR. CHAR. INIT )                     
+VARIABLE DY  VARIABLE DX                
+VARIABLE CY  VARIABLE CX                
+( ADDRESS OF ASCHII CHAR   ----> * )    
+: (CINIT) DUP C@  8 < IF                
+    1 ELSE 2 THEN  XLEN !  1+ DUP C@    
+    YLEN !  1+ CHAR-POINT !  C7/-ALL    
+    STRT-BIT @ 4 *  CHAR-POINT @        
+    2 - C@  2 -  28 * V-MASK +          
+     ( TABLE SELECT)   +                
+( ADD START BIT * 4 TO POINT TO MASKS ) 
+    DUP C@  LO-NEW-MSK !  1+ DUP C@     
+    HI-NEW-MSK !  1+ DUP C@             
+    HI-OLD-MSK !  1+ C@ LO-OLD-MSK ! ;  
+                                        
+                                        
+                                        
+                                        
+                                        
+                                        
+                                        
+                                        
+                                        
+                                        
+-------------------------------------------- SCREEN 092
+( TEST FOR CHAR DRAW )                  
+: +CY   DY @ CY @ +  YP +!              
+     YP @ 191 > IF                      
+       0 YP !  THEN  0 XP ! ;           
+: !CXY   DUP C@ CX ! DUP 1+ C@          
+        CY  !   ;   ( SAVE CHAR LEN )   
+                                        
+: +CX DX @ CX @ + XP +!                 
+    XP @  279 >  IF   +CY THEN ;        
+                                        
+: DXY-INIT                              
+     6 DX !  3 DY ! ;  DXY-INIT         
+( DX,DY MUST BE INITIALIZED IN PRGM )   
+                                        
+: V-SET  0 YP !  0 XP ! ;    V-SET      
+                                        
+: VDRAW    !CXY  (CINIT) YP @           
+         (HGEMIT) YP !  +CX ;           
+                                        
+                                        
+                                        
+                                        
+                                        
+                                        
+-------------------------------------------- SCREEN 093
+( SAVE ISLANDS INTO A BUFFER )          
+                                        
+: @Y  YP @ 2*  YADDRESS + @ ;           
+                                        
+: SADDR  @Y  XOFFST     @ + ;           
+                                        
+( XP YP XLEN YLEN XOFFST  MUST )        
+(  SET PRIOR TO  ENTRY )                
+( ******** )      ( ********** )        
+EXIT                                    
+VARIABLE INVERSE  ( 1 = REV. VID )      
+                                        
+: VDRAW  ( * --> * )                    
+       VDRAW  INVERSE @ IF              
+         YP @ 3 - DUP  YLEN @ OVER      
+         + SWAP DO  I YP ! SADDR        
+         DUP C@ 255 XOR OVER C! 1+      
+         DUP C@ 255 XOR SWAP C! LOOP    
+         0 INVERSE !   YP !             
+       THEN   ;                         
+                                        
+                                        
+                                        
+                                        
+-------------------------------------------- SCREEN 094
+(  CHAR SET )   HEX                     
+                                        
+CREATE CHAR-SET                         
+                                        
+8 C, 0F C, ( 15 DEC. )                  
+( ROW AND COL SIZE )                    
+( 15 LINES/CHAR )  ( A )                
+                                        
+80 C, 00 C, 40 C, 01 C, 20 C,           
+02 C, 10 C, 04 C, 08 C, 08 C,           
+04 C, 10 C, FE C, 1F C, 02 C,           
+10 C, 02 C, 10 C, 02 C, 10 C,           
+02 C, 10 C, 02 C, 10 C, 02 C,           
+10 C, 02 C, 10 C, 02 C, 10 C,           
+DECIMAL                                 
+                                        
+                                        
+                                        
+                                        
+                                        
+                                        
+                                        
+                                        
+                                        
+-------------------------------------------- SCREEN 095
+( TEST SCREEN            < 0/ 0/ 0>131) 
+: HG 1PAGE HI-RES ALL-GRAPHICS ;        
+: 1HG 1PAGE HI-RES GRAPHICS ;           
+HEX                                     
+: !SF-CHAR SF-CHAR ! ;                  
+: ORANGE D5AA !SF-CHAR ;                
+: GREEN 552A !SF-CHAR ;                 
+: BLUE AAD5 !SF-CHAR ;                  
+: VIOLET 2A55 !SF-CHAR ;                
+: BLACK 0 !SF-CHAR ;                    
+: WHITE FFFF !SF-CHAR ;                 
+DECIMAL                                 
+                                        
+                                        
+                                        
+                                        
+                                        
+                                        
+                                        
+                                        
+                                        
+                                        
+                                        
+                                        
+-------------------------------------------- SCREEN 096
+( TEST SCREEN            < 0/ 0/ 0>131) 
+                                        
+HEX                                     
+CREATE BAR 12 C, A C,                   
+CREATE WBAR 1B C, A C,                  
+CREATE SBAR 2 C, A C,                   
+CREATE FOBAR 24 C, A C,                 
+CREATE FULL-SCREEN 28 C, AC C,          
+                                        
+: SCREEN HGR PAGE FULL-SCREEN           
+   0 A SFILL BLACK BAR 0C 0F SFILL      
+   FOBAR 2 1F SFILL                     
+   WBAR 9B 34 DO DUP 08 I SFILL         
+   SBAR 24 I SFILL 10 +LOOP DROP ;      
+DECIMAL                                 
+                                        
+: OS ORANGE SCREEN ;                    
+: BS BLUE SCREEN ;                      
+: GS GREEN SCREEN ;                     
+: VS VIOLET SCREEN ;                    
+                                        
+                                        
+                                        
+                                        
+-------------------------------------------- SCREEN 097
+( PACKING ROUTINES       < 0/ 0/ 0> 97) 
+                                        
+VARIABLE TADR                           
+CVARIABLE BCOUNT   CVARIABLE CUR-BYTE   
+VARIABLE TCNT                           
+                                        
+: !BYTE ( CURRENT BYTE -- )             
+   BCOUNT C@ 1 = IF                     
+    CUR-BYTE C@ TADR @ C! 1 TCNT +! 1   
+   ELSE                                 
+    0 TADR @ >R I C! BCOUNT C@ DUP      
+    I 1+ C! TCNT +! CUR-BYTE C@         
+    R> 2+ C! 3  THEN                    
+   TADR +! CUR-BYTE C! 1 BCOUNT C! ;    
+                                        
+: VPASS ( CURRENT BYTE -- )             
+  BCOUNT C@ 255 = IF                    
+  !BYTE  ELSE DUP CUR-BYTE C@ = IF      
+  DROP 1 BCOUNT C+! ELSE !BYTE          
+  THEN  THEN ;                          
+                                        
+                                        
+                                        
+                               (  0:00) 
+-------------------------------------------- SCREEN 098
+( GRAPHICS PACK          < 3/14/84> 76) 
+HEX                                     
+: ?ZERO 4000 2000 DO I C@ 0= IF         
+     80 I C! THEN LOOP ;                
+DECIMAL                                 
+                                        
+: DRAW-PIC ( BLK# -- )                  
+  HGR 0 SWAP DUP 8 + SWAP DO DUP 1024 * 
+   I BLOCK SWAP 8192 + 1024 CMOVE 1+    
+   LOOP ;                               
+                                        
+: ?BYTES                                
+    0 PTABLE BEGIN DUP C@ OVER 1+ C@ OR 
+   WHILE 1+ SWAP 1+ SWAP REPEAT DROP    
+   DUP U. ;                             
+                                        
+                                        
+                                        
+                                        
+                                        
+                                        
+                                        
+                                        
+                                        
+-------------------------------------------- SCREEN 099
+( PACK                   < 0/ 0/ 0> 99) 
+                                        
+: PINIT1                                
+   ?ZERO 0 TCNT ! PTABLE TADR !         
+   PTABLE 8192 0 FILL 0 BCOUNT C!       
+   YADDRESS @ C@ CUR-BYTE C! ;          
+                                        
+: PINIT2                                
+   TCNT @ 3840 = NOT IF CUR-BYTE C@     
+   !BYTE THEN YADDRESS @ 1+ C@          
+   CUR-BYTE C! 0 BCOUNT C! ;            
+                                        
+: FINISH                                
+   TCNT @ 7680 = NOT IF CUR-BYTE C@     
+   !BYTE THEN ;                         
+                                        
+: PACK   ( -- )                         
+   PINIT1  40 0  DO  192 0 DO           
+    I 2* YADDRESS + @ J + C@ VPASS      
+   LOOP 2 +LOOP                         
+   PINIT2  41 1 DO  192 0 DO            
+    I 2* YADDRESS + @ J + C@ VPASS      
+   LOOP  2 +LOOP FINISH ;               
+                               (  0:00) 
+-------------------------------------------- SCREEN 100
+( LOAD BLOCK             < 3/22/84>100) 
+50 99 THRU                              
+105 117 THRU                            
+                                        
+                                        
+                                        
+                                        
+                                        
+                                        
+                                        
+                                        
+                                        
+                                        
+                                        
+                                        
+                                        
+                                        
+                                        
+                                        
+                                        
+                                        
+                                        
+                                        
+                                        
+-------------------------------------------- SCREEN 105
+( UNPACK                 < 3/17/84> 79) 
+YADDRESS (YAD) !                        
+CVARIABLE VER-CNT CVARIABLE HRCNT       
+VARIABLE CADR                           
+                                        
+CODE @YADR    PHA,                      
+  (YAD) LDA, N STA, (YAD) 1+ LDA,       
+  N 1+ STA, VER-CNT LDA, CLC,           
+  N ADC, N STA, 0 # LDA,                
+  N 1+ ADC, N 1+ STA,                   
+  VER-CNT LDA, CLC, N ADC, N STA,       
+  0 # LDA, N 1+ ADC, N 1+ STA,          
+  0 # LDY, N )Y LDA, N 2+ STA,          
+  INY, N )Y LDA, N 3 + STA,             
+  HRCNT LDA, CLC, N 2+ ADC, N 2+ STA,   
+  0 # LDA, N 3 + ADC,                   
+  N 3 + STA, PLA, RTS, C;               
+                                        
+                                        
+                                        
+                                        
+                                        
+                                        
+                                        
+-------------------------------------------- SCREEN 106
+( UNPACK CONT            < 3/17/84> 80) 
+CODE ?NEW                               
+  192 # LDA, VER-CNT CMP, 0= IF,        
+    0 # LDA, VER-CNT STA, HRCNT LDA,    
+    CLC, 2 # ADC, HRCNT STA, THEN,      
+    RTS, C;                             
+                                        
+CODE INP                                
+  CLC, N 4 + ADC, N 4 + STA,            
+  0 # LDA, N 5 + ADC, N 5 + STA,        
+  RTS, C;                               
+                                        
+CODE PUT-BYTE                           
+  PHA, ' @YADR JSR, 0 # LDY,            
+  N 2+ )Y STA, 1 # LDA,                 
+  CLC, VER-CNT ADC, VER-CNT STA,        
+  ' ?NEW JSR, PLA, RTS, C;              
+                                        
+                                        
+                                        
+                                        
+                                        
+                                        
+                                        
+-------------------------------------------- SCREEN 107
+( UNPACK CONT            < 3/17/84> 80) 
+CVARIABLE #CHAR                         
+                                        
+CODE UHALF                              
+  0 # LDY,  N 4 + )Y LDA, 0= IF,        
+  INY,  N 4 + )Y LDA, #CHAR STA,        
+  INY, N 4 + )Y LDA, PHA, BEGIN,        
+  PLA, ' PUT-BYTE JSR, PHA, #CHAR LDA,  
+  SEC, 1 # SBC, #CHAR STA, 0= UNTIL,    
+  PLA, 2 # LDA, ' INP JSR, ELSE,        
+  ' PUT-BYTE JSR,  THEN, 1 # LDA,       
+  ' INP JSR, RTS, C;                    
+                                        
+CODE UNPACK                             
+  3 # LDA, SETUP JSR, 0 # LDA,          
+  HRCNT STA, VER-CNT STA,  BEGIN,       
+  ' UHALF JSR, HRCNT LDA, 40 # CMP,     
+  0= UNTIL, 0 # LDY, VER-CNT STY,       
+  INY, HRCNT STY,  BEGIN, ' UHALF JSR,  
+  HRCNT LDA, 41 # CMP, 0= UNTIL,        
+  NEXT JMP, C;                          
+                                        
+: UNPACK PTABLE 0. UNPACK ;             
+                                        
+-------------------------------------------- SCREEN 108
+( TEMP-LOAD TABLE        < 0/ 0/ 0> 82) 
+                                        
+: >TABLE                                
+   PTABLE 8192 0 FILL 97 BLOCK PTABLE   
+   1024 CMOVE 98 BLOCK PTABLE 1024 +    
+   174 CMOVE ;                          
+                                        
+                                        
+                                        
+                                        
+                                        
+                                        
+                                        
+                                        
+                                        
+                                        
+                                        
+                                        
+                                        
+                                        
+                                        
+                                        
+                                        
+                                        
+-------------------------------------------- SCREEN 109
+( SEARCH ROUTINES        < 3/ 2/84> 80) 
+                                        
+: >SEC 4 * SEC-INDEX + ;                
+                                        
+: +OR COL# @ >SEC 3 + DUP C@ ROT OR     
+       SWAP C! ;                        
+                                        
+: ?DO SDB + C@ ?DUP ;                   
+                                        
+: ?PRIORITY  PRIORITY + C@ ;            
+                                        
+: S-LOCATION                            
+    1 ?PRIORITY IF                      
+    13 ?DO IF                           
+    COLBUF 3 + C@ AND IF 1 ?PRIORITY    
+    +OR THEN THEN THEN ;                
+                                        
+                                        
+                                        
+                                        
+                                        
+                                        
+                                        
+                                        
+-------------------------------------------- SCREEN 110
+( SEARCH CONTINUED       < 3/ 2/84> 80) 
+                                        
+: S-ENROLLMENT                          
+    2 ?PRIORITY IF                      
+    14 ?DO IF                           
+    COLBUF 14 + @ SWAP                  
+    1 OVER = IF DROP 0 999 ELSE         
+    2 OVER = IF DROP 1000 4999 ELSE     
+    4 OVER = IF DROP 5000 14999 ELSE    
+    DROP 15000 64000 THEN THEN THEN     
+    WITHIN IF 2 ?PRIORITY +OR           
+    THEN THEN THEN ;                    
+                                        
+: S-AFFILIATION                         
+    3 ?PRIORITY IF                      
+    15 ?DO IF                           
+    COLBUF 5 + C@ DUP ROT 3 AND         
+    AND IF DROP 3 ?PRIORITY +OR         
+    ELSE 252 AND COLBUF 6 + C@ OR       
+    IF 3 ?PRIORITY +OR THEN             
+    THEN THEN THEN ;                    
+                                        
+                                        
+                                        
+-------------------------------------------- SCREEN 111
+( SEARCH CONTINUED       < 3/ 2/84> 82) 
+                                        
+: S-STUDENT-BODY                        
+   4 ?PRIORITY IF                       
+   SDB 16 + C@ COLBUF 4 + C@ AND        
+   IF 4 ?PRIORITY +OR THEN THEN ;       
+                                        
+: S-AREAS-OF-STUDY                      
+   5 ?PRIORITY IF  AS-TABLE             
+    COLBUF 33 +   3 0 DO                
+     I SDB + 17 + C@  8 0 DO            
+      I @BIT OVER AND IF                
+       0 4 PICK C@ 0 DO                 
+        3 PICK I + C@ OR                
+       LOOP IF  5 ?PRIORITY +OR         
+        1 COL# @ >SEC 2+ C+!            
+      THEN  THEN  SWAP 3 PICK C@ +      
+      ROT 1+ SWAP ROT I 6 = I' 2 =      
+      AND  IF  LEAVE                    
+     THEN LOOP  DROP                    
+    LOOP                                
+   DDROP THEN ;                         
+                                        
+                                        
+-------------------------------------------- SCREEN 112
+( SEARCH CONTINUED       < 3/ 2/84> 83) 
+                                        
+: S-SPECIAL-FEATURES                    
+   6 ?PRIORITY IF                       
+    20 ?DO IF                           
+      5 0 DO I @BIT OVER AND  IF        
+       0 I 2* SF-TABLE + DUP C@         
+       COLBUF + SWAP 1+ C@ 0 DO         
+        I 2 PICK + C@ ROT OR -ROT LOOP  
+       DROP IF 6 ?PRIORITY +OR THEN     
+      THEN LOOP DROP                    
+    THEN THEN ;                         
+                                        
+: S-SPORTS                              
+   7 ?PRIORITY IF                       
+    21 ?DO IF 1- 4 * 151 +              
+     COLBUF + SDB 22 + 0 3 0 DO         
+      3 PICK I + C@ 2 PICK I + C@       
+      AND OR LOOP IF 7 ?PRIORITY +OR    
+     THEN DDROP THEN THEN ;             
+                                        
+                                        
+                                        
+                               (  0:00) 
+-------------------------------------------- SCREEN 113
+( SEARCH CONTINUED       < 3/ 2/84> 84) 
+                                        
+: INIT-SEC-INDEX                        
+   SEC-INDEX 1200 0 FILL 139 BLOCK      
+   2+ @ 0 DO I I 4 * SEC-INDEX + !      
+   LOOP ;                               
+                                        
+: SEARCH    EMPTY-BUFFERS               
+   INIT-SEC-INDEX  139 BLOCK 2+ @       
+   0 DO I @DATA S-LOCATION              
+   S-ENROLLMENT                         
+   S-AFFILIATION S-STUDENT-BODY         
+   S-AREAS-OF-STUDY S-SPECIAL-FEATURES  
+   S-SPORTS I . LOOP ;                  
+                                        
+: TEST 8 0 DO I @BIT I PRIORITY + C!    
+    LOOP ;                              
+                                        
+                                        
+                                        
+                                        
+                                        
+                                        
+                                        
+-------------------------------------------- SCREEN 114
+( SEARCH TEST            < 3/11/84>225) 
+                                        
+HEX                                     
+CREATE 1TEST 1 C, 8 C, 2 C, 1 C, 1 C,   
+  55 C, 55 C, 55 C, 0D C, 84 C, 0 C,    
+  20 C,                                 
+DECIMAL                                 
+                                        
+: TEST1 SDB 25 0 FILL                   
+    1TEST SDB 12 + 12 CMOVE TEST ;      
+                                        
+                                        
+                                        
+                                        
+                                        
+                                        
+                                        
+                                        
+                                        
+                                        
+                                        
+                                        
+                                        
+                               ( 13:22) 
+-------------------------------------------- SCREEN 115
+( SORT SECONDARY INDEX   < 3/11/84>226) 
+                                        
+: >SEC1 >SEC 2+ @ ;                     
+                                        
+: EXCHANGE ( A,B -- )                   
+   >SEC SWAP >SEC DDUP >R >R >R         
+   D@ R> D@ R> D! R> D! ;               
+                                        
+: SORT                                  
+   139 BLOCK 2+ @ DUP 1- 0 DO           
+    DUP I 1+ DO                         
+     J >SEC1 I >SEC1 < IF               
+       J I EXCHANGE THEN                
+   LOOP LOOP DROP ;                     
+                                        
+: QQ CR 139 BLOCK 2+ @ 0 DO I           
+   >SEC1 . KEY DROP CR LOOP ;           
+                                        
+                                        
+                                        
+                                        
+                                        
+                                        
+                                        
+-------------------------------------------- SCREEN 116
+(                        < 0/ 0/ 0>116) 
+133120. DCONSTANT GOFFST                
+CVARIABLE G# -1 G# C!                   
+CREATE GTABLE 0 , 0 , 0 , 1200 , 0 ,    
+  2708 ,                                
+                                        
+: .GRAPH ( N -- )                       
+  G# C@ OVER = IF DROP ELSE             
+  4 * GTABLE + D@ GOFFST D+ DDUP        
+  2 VCNT ! PTABLE VADR ! @VIR           
+  PTABLE @ VCNT ! 2. D+ @VIR THEN       
+  UNPACK HG ;                           
+                                        
+                                        
+                                        
+                                        
+                                        
+                                        
+                                        
+                                        
+                                        
+                                        
+                                        
+                                        
+-------------------------------------------- SCREEN 117
+( DRAW ICONS             < 3/24/84>117) 
+                                        
+CVARIABLE 1HCNT                         
+                                        
+CODE @VADR                              
+   ' @YADR JSR,  N 2+ LDA,  CADR STA,   
+   N 3 + LDA,  CADR 1+ STA, NEXT JMP,   
+   C;                                   
+                                        
+: DRAW-ICON ( X,Y,ICON# --)             
+   2* 140 + BLOCK -ROT VER-CNT C!       
+   DUP 1HCNT C!  HRCNT C!  DUP 4 + SWAP 
+   DUP @ SWAP 2+ @ SWAP -ROT 0 DO       
+   OVER 0 DO  J I' * I + OVER + C@      
+   @VADR CADR @ C!  1 HRCNT C+! LOOP    
+   1HCNT C@ HRCNT C! 1 VER-CNT C+!      
+   LOOP DDROP ;                         
+                                        
+                                        
+                                        
+                                        
+                                        
+                                        
+                                        
+-------------------------------------------- SCREEN 118
+( SAVE, PACK-ALL         < 0/ 0/ 0>118) 
+VARIABLE INDEX                          
+VARIABLE NBLK                           
+                                        
+: SAVE                                  
+   ?BYTES DUP 140 BLOCK INDEX @ +       
+   NBLK @ 140 - OVER C! 1+ ! UPDATE     
+   1024 /MOD SWAP IF 1+ THEN DUP >R     
+   0 DO PTABLE I 1024 * + NBLK @ I +    
+   BLOCK 1024 CMOVE UPDATE LOOP         
+   FLUSH R> NBLK +! 3 INDEX +! ;        
+                                        
+: @INDEX  279 BLOCK DUP @ INDEX !       
+    2+ @ NBLK ! ;                       
+                                        
+: PACK-ALL PAGE @INDEX                  
+   140 0 DO I DRAW-PIC PACK             
+   SAVE  10 +LOOP TEXT INDEX @          
+   279 BLOCK ! NBLK @ 279 BLOCK 2+      
+   ! UPDATE FLUSH 7 EMIT 7 EMIT ;       
+                                        
+                                        
+                                        
+                                        
+-------------------------------------------- SCREEN 119
+( CHECK PACKED GRAPHICS  < 0/ 0/ 0>119) 
+                                        
+: CHECK     EMPTY-BUFFERS               
+  SWAP DO 140 BLOCK I 3 * + DUP 1+ @    
+     VCNT ! PTABLE VADR ! PTABLE        
+     8192 0 FILL C@ 140 + 1024 M*       
+     @VIR HGR UNPACK LOOP ;             
+                                        
+                                        
+                                        
+                                        
+                                        
+                                        
+                                        
+                                        
+                                        
+                                        
+                                        
+                                        
+                                        
+                                        
+                                        
+                                        
+                                        
